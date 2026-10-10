@@ -1,0 +1,10 @@
+services:
+  feedfinder:
+    image: kpa90/feedfinder:latest
+    container_name: feedfinder
+    restart: unless-stopped
+    ports:
+      - "8000:8000" # host:kontener – zmień lewą stronę, aby wystawić inny port
+    environment:
+      - PORT=8000 # port nasłuchu wewnątrz kontenera
+    read_only: true

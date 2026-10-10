@@ -1,0 +1,22 @@
+# Konfiguracja narzędzi AI (zawiera klucze API – nie commitować)
+.mcp.json
+opencode.json
+.claude/
+.codex/
+.opencode/
+.skillbox/
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Ogólne
+.DS_Store
+*.log
+*.tmp
+.env
+.env.local
