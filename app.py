@@ -269,41 +269,127 @@ PAGE = """<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <title>feedfinder</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' rx='4' fill='rgb(194,65,12)'/><circle cx='5' cy='11' r='1.4' fill='white'/><path d='M4 7.2a4.8 4.8 0 0 1 4.8 4.8M4 4a8 8 0 0 1 8 8' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round'/></svg>">
 <style>
-body{font:16px/1.5 system-ui,sans-serif;max-width:40rem;margin:10vh auto;padding:0 1rem}
-form,.feed{display:flex;gap:.5rem}
-input{flex:1;min-width:0;font:inherit;padding:.5rem}
-button,.feed a{font:inherit;padding:.5rem 1rem}
-.feed{margin:.5rem 0;align-items:center}
-.err{color:#c00}
-small{opacity:.7}
+:root{--bg:oklch(.99 .003 75);--fg:oklch(.23 .01 60);--muted:oklch(.48 .012 60);--line:oklch(.89 .006 70);
+--field:oklch(1 0 0);--accent:oklch(.55 .17 42);--on-accent:oklch(1 0 0);--err:oklch(.5 .19 27);--warn:oklch(.5 .11 70)}
+@media (prefers-color-scheme:dark){:root{--bg:oklch(.18 .006 60);--fg:oklch(.93 .006 75);--muted:oklch(.7 .01 70);
+--line:oklch(.32 .008 60);--field:oklch(.22 .006 60);--accent:oklch(.74 .15 52);--on-accent:oklch(.2 .02 50);
+--err:oklch(.75 .14 25);--warn:oklch(.8 .11 80)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+-webkit-font-smoothing:antialiased;caret-color:var(--accent)}
+::selection{background:color-mix(in oklch,var(--accent) 28%%,transparent)}
+main{max-width:40rem;margin:0 auto;padding:12vh 1rem 4rem}
+h1{display:flex;align-items:center;gap:.5rem;margin:0 0 2rem;font-size:1.125rem;font-weight:650;letter-spacing:-.01em}
+h1 svg{color:var(--accent)}
+label{display:block;margin-bottom:.75rem;font-size:1.25rem;font-weight:550;letter-spacing:-.015em;line-height:1.35;text-wrap:balance}
+.field{position:relative;display:flex;gap:.375rem;padding:.3125rem;background:var(--field);border:1px solid var(--line);
+border-radius:.75rem;transition:border-color .15s,box-shadow .15s;overflow:hidden}
+.field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in oklch,var(--accent) 22%%,transparent)}
+input{flex:1;min-width:0;padding:0 .5rem;border:0;background:none;color:inherit;font:inherit;outline:none}
+.field input:focus-visible{outline:none}
+input::placeholder{color:var(--muted)}
+button,.open{font:inherit;font-size:.9375rem;font-weight:550;border-radius:.5rem;cursor:pointer;white-space:nowrap}
+.field button{padding:.5rem 1.125rem;border:0;background:var(--accent);color:var(--on-accent)}
+.field button:hover{filter:brightness(1.08)}
+button:disabled{cursor:progress;opacity:.75}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hint{margin:.75rem 0 0;color:var(--muted);font-size:.875rem}
+.bar{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--accent);transform:scaleX(0);transform-origin:left}
+.busy .bar{animation:load 8s cubic-bezier(.16,1,.3,1) forwards}
+.busy #out{opacity:.4;transition:opacity .2s}
+@keyframes load{to{transform:scaleX(.92)}}
+@media (prefers-reduced-motion:reduce){.busy .bar{animation:none;transform:scaleX(1);opacity:.5}}
+#out{margin-top:3rem}
+h2{margin:0 0 .25rem;font-size:1rem;font-weight:650;overflow-wrap:anywhere}
+.note{margin:.25rem 0 0;color:var(--warn);font-size:.875rem}
+.err{margin:0;color:var(--err)}
+ul{list-style:none;margin:1rem 0 0;padding:0}
+li{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem 1rem;padding:.875rem 0;border-top:1px solid var(--line)}
+li:last-child{border-bottom:1px solid var(--line)}
+.feed{flex:1 1 16rem;min-width:0}
+.feed small{display:block;color:var(--muted);font-size:.8125rem;font-weight:550}
+code{font:.875rem/1.45 ui-monospace,"SF Mono",Menlo,monospace;overflow-wrap:anywhere}
+.act{display:flex;gap:.25rem}
+.copy{display:inline-grid;padding:.375rem .75rem;border:1px solid var(--line);background:var(--field);color:inherit}
+.copy:hover{border-color:var(--muted)}
+.copy span{grid-area:1/1}
+.copy span+span,.copy.done span:first-child{visibility:hidden}
+.copy.done span+span{visibility:visible;color:var(--accent)}
+.open{padding:.375rem .75rem;color:var(--muted);text-decoration:none}
+.open:hover{color:var(--fg);text-decoration:underline;text-underline-offset:3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%%)}
 </style>
-<h1>feedfinder</h1>
-<p>Wklej adres strony, podcastu (Apple, Spotify, Deezer, SoundCloud) lub kanału YouTube.</p>
-<form><input name="url" type="text" value="%s" placeholder="https://…" autofocus required>
-<button>Szukaj</button></form>
-%s
+<main>
+<h1><svg width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><circle cx="3" cy="13" r="1.6" fill="currentColor"/><path d="M2 7.5A6.5 6.5 0 0 1 8.5 14M2 2.5A11.5 11.5 0 0 1 13.5 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>feedfinder</h1>
+<form action="/" role="search">
+<label for="url">Wklej adres strony, podcastu albo kanału – znajdę jego RSS.</label>
+<div class="field"><input id="url" name="url" type="text" inputmode="url" autocomplete="off" autocapitalize="off"
+spellcheck="false" value="%s" placeholder="https://…" required%s><button>Szukaj</button><span class="bar"></span></div>
+<p class="hint">Strony&nbsp;WWW, Apple&nbsp;Podcasts, Spotify, Deezer, YouTube, SoundCloud, Reddit, GitHub, Google&nbsp;News</p>
+</form>
+<section id="out">%s</section>
+<p id="status" class="sr" aria-live="polite"></p>
+</main>
+<script>
+const f = document.querySelector("form"), i = f.url, b = f.querySelector("button"), status = document.getElementById("status");
+f.addEventListener("submit", () => {
+  document.body.classList.add("busy");
+  b.disabled = true;
+  b.textContent = status.textContent = "Szukam…";
+});
+// po cofnięciu w historii przeglądarka przywraca stronę razem ze stanem "szukam"
+addEventListener("pageshow", () => { document.body.classList.remove("busy"); b.disabled = false; b.textContent = "Szukaj"; });
+// wklejenie całego adresu od razu uruchamia wyszukiwanie
+i.addEventListener("paste", () => {
+  const whole = i.selectionStart === 0 && i.selectionEnd === i.value.length;
+  setTimeout(() => { if (whole && /\\S\\.\\S/.test(i.value)) f.requestSubmit(); });
+});
+function copy(text) {
+  if (navigator.clipboard && isSecureContext) return navigator.clipboard.writeText(text);
+  // zwykłe http (np. adres w sieci lokalnej) nie ma dostępu do navigator.clipboard
+  const t = document.createElement("textarea");
+  t.value = text;
+  document.body.append(t);
+  t.select();
+  const ok = document.execCommand("copy");
+  t.remove();
+  return ok ? Promise.resolve() : Promise.reject();
+}
+document.addEventListener("click", e => {
+  const c = e.target.closest(".copy");
+  if (!c) return;
+  copy(c.dataset.url).then(() => {
+    c.classList.add("done");
+    status.textContent = "Skopiowano do schowka";
+    setTimeout(() => c.classList.remove("done"), 1600);
+  }, () => getSelection().selectAllChildren(c.closest("li").querySelector("code")));
+});
+</script>
 </html>"""
 
 
 def render(url, result):
     out = ""
     if result and not result["ok"]:
-        out = '<p class="err">%s</p>' % html.escape(result["error"])
+        out = '<p class="err" role="alert">%s</p>' % html.escape(result["error"])
     elif result:
-        if result.get("title"):
-            out += "<h2>%s</h2>" % html.escape(result["title"])
+        feeds = result["feeds"]
+        title = result.get("title") or ("Znaleziony kanał" if len(feeds) == 1 else "Znalezione kanały")
+        out += "<h2>%s</h2>" % html.escape(title)
         if result.get("note"):
-            out += "<p><small>%s</small></p>" % html.escape(result["note"])
-        for feed in result["feeds"]:
+            out += '<p class="note">%s</p>' % html.escape(result["note"])
+        out += "<ul>"
+        for feed in feeds:
             href = html.escape(feed["url"], quote=True)
-            if feed.get("label"):
-                out += "<small>%s</small>" % html.escape(feed["label"])
-            out += ('<div class="feed"><input readonly value="%s" onfocus="this.select()">'
-                    '<button type="button" onclick="navigator.clipboard.writeText(this.previousSibling.value)">'
-                    'Kopiuj</button><a href="%s" target="_blank" rel="noopener noreferrer">Otwórz</a></div>'
-                    % (href, href))
-    return PAGE % (html.escape(url, quote=True), out)
+            label = "<small>%s</small>" % html.escape(feed["label"]) if feed.get("label") else ""
+            out += ('<li><div class="feed">%s<code>%s</code></div><div class="act">'
+                    '<button type="button" class="copy" data-url="%s"><span>Kopiuj</span><span>Skopiowano</span></button>'
+                    '<a class="open" href="%s" target="_blank" rel="noopener noreferrer">Otwórz</a></div></li>'
+                    % (label, href.replace("/", "/<wbr>"), href, href))
+        out += "</ul>"
+    return PAGE % (html.escape(url, quote=True), "" if result else " autofocus", out)
 
 
 class Handler(BaseHTTPRequestHandler):

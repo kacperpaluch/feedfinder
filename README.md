@@ -72,7 +72,7 @@ Kontener nie potrzebuje wolumenów: nic nie zapisuje i nie przechowuje żadnych 
 
 ### Strona WWW
 
-Otwórz `http://localhost:8000`, wklej adres i kliknij *Szukaj*. Każdy znaleziony feed można skopiować lub otworzyć.
+Otwórz `http://localhost:8000` i wklej adres – wyszukiwanie rusza od razu po wklejeniu (albo po kliknięciu *Szukaj*). Każdy znaleziony feed można skopiować jednym kliknięciem lub otworzyć; kopiowanie działa także przez zwykłe `http` w sieci lokalnej.
 Wyszukiwanie da się też podlinkować: `http://localhost:8000/?url=<adres>`.
 
 ### API
